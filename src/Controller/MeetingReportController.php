@@ -10,15 +10,14 @@ use App\Enum\StatusSanction;
 use App\Exception\TontineException;
 use App\Utilities\ControllerUtility;
 use App\Utilities\HttpHelper;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -32,9 +31,10 @@ class MeetingReportController extends AbstractController
      * @throws TontineException
      */
     #[Route('/api/meeting/report/tontine/{idTontine}', name: 'app_meeting_report', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getReportOfTontine(int $idTontine, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
 
         $meetingReports = $em->getRepository(MeetingReport::class)->findBy(['tontine' => $tontine]);
@@ -57,14 +57,16 @@ class MeetingReportController extends AbstractController
         name: 'app_meeting_report_update',
         methods: ['PATCH']
     )]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function updateReportOfTontine(
         Request                $request,
-        HtmlSanitizerInterface $htmlSanitizer,
+        //HtmlSanitizerInterface $htmlSanitizer,
         int                    $idTontine,
         int                    $idMeetingReport,
         EntityManagerInterface $em,
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
         $meetingReport = $em->getRepository(MeetingReport::class)->find($idMeetingReport);
         if (!$meetingReport) {
@@ -82,12 +84,22 @@ class MeetingReportController extends AbstractController
         if (!isset($body['content'])) {
             return $this->json('', Response::HTTP_BAD_REQUEST);
         }
-        $safeContents = $htmlSanitizer->sanitize($body['content']);
-        $meetingReport->setContent($safeContents);
-        $meetingReport->setUpdateDate(new \DateTime());
+        //TODO check how to sanitize the content without HtmlSanitizer
+        //$safeContents = $htmlSanitizer->sanitize($body['content']);
+        $meetingReport->setContent($body['content']);
+        $meetingReport->setUpdateDate(new DateTime());
         $em->flush();
 
-        return $this->json($meetingReport, Response::HTTP_OK, [], ['groups' => [GroupConst::GROUP_MEETING_REPORT_READ]]);
+        return $this->json(
+            $meetingReport,
+            Response::HTTP_OK,
+            [],
+            [
+                'groups' => [
+                    GroupConst::GROUP_MEETING_REPORT_READ
+                ]
+            ]
+        );
     }
 
 
@@ -97,7 +109,6 @@ class MeetingReportController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/meeting/report/tontine/{idTontine}', name: 'app_meeting_report_create', methods: ['POST'])]
-    #[IsGranted('ROLE_OFFICE')]
     public function createReportOfTontine(
         Request                $request,
         SerializerInterface    $serializer,
@@ -105,6 +116,9 @@ class MeetingReportController extends AbstractController
         EntityManagerInterface $em,
         ValidatorInterface     $validator
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('ROLE_OFFICE');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
 
         $user = $this->getUser();
@@ -118,7 +132,7 @@ class MeetingReportController extends AbstractController
         }
 
         $meetingReport->setTontine($tontine);
-        $meetingReport->setCreationDate(new \DateTime('NOW'));
+        $meetingReport->setCreationDate(new DateTime('NOW'));
         $meetingReport->setAuthor($author);
         $em->persist($meetingReport);
         $em->flush();
@@ -139,16 +153,15 @@ class MeetingReportController extends AbstractController
      * @param Request $request
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $em
+     * @param ValidatorInterface $validator
      * @return JsonResponse
      * @throws TontineException
-     * @throws Exception
      */
     #[Route(
         '/api/meeting/report/tontine/{idTontine}/sanction',
         name: 'app_meeting_sanction_create',
         methods: ['POST']
     )]
-    #[IsGranted('ROLE_OFFICE')]
     public function createSanction(
         int                    $idTontine,
         Request                $request,
@@ -156,6 +169,9 @@ class MeetingReportController extends AbstractController
         EntityManagerInterface $em,
         ValidatorInterface     $validator,
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('ROLE_OFFICE');
+
         // control to make sure the user is allowed to create a sanction in this tontine
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
 
@@ -178,8 +194,8 @@ class MeetingReportController extends AbstractController
             );
         }
 
-        $sanction->setStatus(StatusSanction::PENDING->name);
-        $sanction->setStartDate(new \DateTime('NOW'));
+        $sanction->setStatus(StatusSanction::PENDING);
+        $sanction->setStartDate(new DateTime('NOW'));
         $sanction->setTontine($tontine);
         $applyMember->addSanction($sanction);
 
@@ -209,12 +225,14 @@ class MeetingReportController extends AbstractController
         name: 'app_meeting_sanction_delete',
         methods: ['DELETE']
     )]
-    #[IsGranted('ROLE_OFFICE')]
     public function deleteSanction(
         int                    $idTontine,
         int                    $idSanction,
         EntityManagerInterface $em
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('ROLE_OFFICE');
+
         ControllerUtility::getTontine($em, $idTontine, $this->getUser());
 
         $sanction = $em->getRepository(Sanction::class)->findOneBy([
@@ -222,11 +240,11 @@ class MeetingReportController extends AbstractController
         ]);
 
         if (!$sanction) {
-            return $this->json("The sanction with id {$idSanction} does not exist", Response::HTTP_NOT_FOUND);
+            return $this->json("The sanction with id $idSanction does not exist", Response::HTTP_NOT_FOUND);
         }
 
-        $sanction->setStatus(StatusSanction::REJECTED->name);
-        $sanction->setEndDate(new \DateTime('NOW'));
+        $sanction->setStatus(StatusSanction::REJECTED);
+        $sanction->setEndDate(new DateTime('NOW'));
         $em->persist($sanction);
         $em->flush();
 
@@ -252,15 +270,17 @@ class MeetingReportController extends AbstractController
         name: 'app_meeting_sanctions_get',
         methods: ['GET']
     )]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getSanctions(
         int                    $idTontine,
         EntityManagerInterface $em
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
         $sanctions = $em->getRepository(Sanction::class)->findBy([
             'tontine' => $tontine,
-            'status' => [StatusSanction::PENDING->name, StatusSanction::EXECUTED->name]
+            'status' => [StatusSanction::PENDING, StatusSanction::EXECUTED]
         ]);
 
         return $this->json(

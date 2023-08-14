@@ -17,14 +17,10 @@ class AppController extends AbstractController
     #[Route('/api/param', name: 'app_get_param')]
     public function getConfiguration(): JsonResponse
     {
-        $reasonsDeposit = array_column(ReasonDeposit::cases(), 'name');
-        $typesSanction = array_column(TypeSanction::cases(), 'name');
-        $typesEvent = array_column(TypeEvent::cases(), 'name');
-
         $config = [];
-        $config['reasonsDeposit'] = $reasonsDeposit;
-        $config['typesSanction'] = $typesSanction;
-        $config['typesEvent'] = $typesEvent;
+        $config['reasonsDeposit'] = ReasonDeposit::allsReasonDeposit();
+        $config['typesSanction'] = TypeSanction::allSanctions();
+        $config['typesEvent'] = TypeEvent::allTypeEvent();
 
         return $this->json($config);
     }
@@ -33,7 +29,7 @@ class AppController extends AbstractController
      * implement a heartbeat for my api
      * @throws Exception
      */
-    #[Route('/heart', name:'app_app_heart', methods: ['GET'])]
+    #[Route('/heart', name: 'app_app_heart', methods: ['GET'])]
     public function heart(): JsonResponse
     {
         return $this->json("Hello World! I am available", Response::HTTP_OK);

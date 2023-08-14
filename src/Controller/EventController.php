@@ -9,15 +9,12 @@ use App\Enum\TypeEvent;
 use App\Exception\TontineException;
 use App\Utilities\ControllerUtility;
 use App\Utilities\HttpHelper;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
-use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -35,7 +32,6 @@ class EventController extends AbstractController
      * @throws TontineException
      */
     #[Route('/api/tontine/{idTontine}/event', name: 'app_event_create', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function createEvent(
         int                    $idTontine,
         EntityManagerInterface $em,
@@ -43,6 +39,9 @@ class EventController extends AbstractController
         SerializerInterface    $serializer,
         ValidatorInterface     $validator,
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
         $event = HttpHelper::getResource($request, $serializer, Event::class);
         $errors = $validator->validate($event);
@@ -55,7 +54,7 @@ class EventController extends AbstractController
         ]);
 
         $typeEvent = $event->getType();
-        if (!in_array($typeEvent, array_column(TypeEvent::cases(), 'name'))) {
+        if (!in_array($typeEvent, TypeEvent::allTypeEvent())) {
             return $this->json('You can not create events of this type.', Response::HTTP_BAD_REQUEST);
         }
 
@@ -93,14 +92,19 @@ class EventController extends AbstractController
     /**
      * get all event of a specific tontine
      * @param int $idTontine
+     * @param EntityManagerInterface $em
+     * @return JsonResponse
+     * @throws TontineException
      */
     #[Route("/api/tontine/{idTontine}/event", name: "app_get_event", methods: ['GET'])]
-    #[IsGranted("IS_AUTHENTICATED")]
     public function getEventOfTontine(
         int $idTontine,
         EntityManagerInterface $em,
 
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $tontine = ControllerUtility::getTontine($em, $idTontine, $this->getUser());
 
         $events = $em->getRepository(Event::class)->findAll();

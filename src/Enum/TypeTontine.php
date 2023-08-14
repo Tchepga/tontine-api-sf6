@@ -10,4 +10,14 @@ class TypeTontine
     public const ACCUMULATIVE = "accumulative";
 
     public const MIX = "mix";
+
+    public static function allTypeSanction(): array
+    {
+        return [
+            self::PROPERTY_PURCHASE,
+            self::ROTATING,
+            self::ACCUMULATIVE,
+            self::MIX
+        ];
+    }
 }

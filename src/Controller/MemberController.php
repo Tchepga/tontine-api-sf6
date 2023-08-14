@@ -12,13 +12,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -66,7 +65,16 @@ class MemberController extends AbstractController
         } else {
             $em->persist($member);
             $em->flush();
-            return $this->json($member, Response::HTTP_CREATED, [], ['groups' => [GROUP_MEMBER_READ]]);
+            return $this->json(
+                $member,
+                Response::HTTP_CREATED,
+                [],
+                [
+                    'groups' => [
+                        GroupConst::GROUP_MEMBER_READ
+                    ]
+                ]
+            );
         }
     }
 
@@ -79,9 +87,10 @@ class MemberController extends AbstractController
         name: 'app_member_get_profile',
         methods: ['GET']
     )]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getProfile(): JsonResponse
     {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
         $member = $this->getUser();
         if (!$member) {
@@ -115,7 +124,11 @@ class MemberController extends AbstractController
             ControllerUtility::sortCollection($members, 'id'),
             Response::HTTP_OK,
             [],
-            ['groups' => [GROUP_MEMBER_READ]]
+            [
+                'groups' => [
+                    GroupConst::GROUP_MEMBER_READ
+                ]
+            ]
         );
     }
 
@@ -160,14 +173,16 @@ class MemberController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/member/logout', name: 'api_logout', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function logout(
         Security $security
-    ): JsonResponse {
-        // logout the user in on the current firewall
-        $security->logout(false);
+    ) {
 
-        return $this->json('', Response::HTTP_OK);
+//        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+//
+//        // logout the user in on the current firewall
+//        $security->logout(false);
+//
+//        return $this->json('', Response::HTTP_OK);
     }
 
     /**
@@ -177,9 +192,10 @@ class MemberController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/member/{memberId}', name: 'app_member_delete_member', methods: ['DELETE'])]
-    #[IsGranted('ROLE_PRESIDENT')]
     public function deleteMember(int $memberId, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_PRESIDENT');
+
         $memberRepository = $em->getRepository(Member::class);
         $member = $memberRepository->find($memberId);
         if (!$member) {
@@ -205,13 +221,14 @@ class MemberController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/member', name: 'app_member_update_member', methods: ['PUT'])]
-    #[IsGranted('ROLE_PRESIDENT')]
     public function updateMemberByPresi(
         Request                $request,
         SerializerInterface    $serializer,
         EntityManagerInterface $em,
         ValidatorInterface     $validator
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('ROLE_PRESIDENT');
 
         $bodyMember = HttpHelper::getResource($request, $serializer, Member::class);
         $member = $em->getRepository(Member::class)->findOneBy([
@@ -235,13 +252,14 @@ class MemberController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/member/profile', name: 'app_member_update_profile', methods: ['PATCH'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function updateProfile(
         Request                $request,
-        SerializerInterface    $serializer,
         EntityManagerInterface $em,
         ValidatorInterface     $validator
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $loginMember = $this->getUser();
         $member = $em->getRepository(Member::class)->findOneBy([
             'phone' => $loginMember->getUserIdentifier()
@@ -304,7 +322,7 @@ class MemberController extends AbstractController
             $em->flush();
         }
 
-        return $this->json($member, Response::HTTP_ACCEPTED, [], ['groups' => [GROUP_MEMBER_READ]]);
+        return $this->json($member, Response::HTTP_ACCEPTED, [], ['groups' => [GroupConst::GROUP_MEMBER_READ]]);
     }
 
     /**
@@ -316,12 +334,14 @@ class MemberController extends AbstractController
      * @throws TontineException
      */
     #[Route('/api/member/password', name: 'app_member_reset_password', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function resetPassword(
         Request                     $request,
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface      $em
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $user = $this->getUser();
         if (!$user) {
             throw new TontineException("Session expired");

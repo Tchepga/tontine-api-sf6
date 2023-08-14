@@ -16,4 +16,16 @@ class PeriodTontine
     public const HALFYEARLY = 'half_yearly';
 
     public const ANNUALLY = 'annually';
+
+    public static function allPeriods(): array
+    {
+        return [
+            self::MONTHLY,
+            self::WEEKLY,
+            self::TWICEWEEKLY,
+            self::QUARTERLY,
+            self::HALFYEARLY,
+            self::ANNUALLY,
+        ];
+    }
 }

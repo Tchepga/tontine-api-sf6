@@ -10,7 +10,6 @@ use App\Enum\ReasonDeposit;
 use App\Exception\CollectionException;
 use App\Exception\TontineException;
 use Doctrine\ORM\EntityManagerInterface;
-use ErrorException;
 use Exception;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -59,21 +58,21 @@ class ControllerUtility
 
     /**
      * build error message of controller
-     * @param ErrorCode $errorCode
+     * @param string $errorCode
      * @return ErrorCodeFormat
      * @throws TontineException
      */
-    public static function buildError(ErrorCode $errorCode): ErrorCodeFormat
+    public static function buildError(string $errorCode): ErrorCodeFormat
     {
         return match ($errorCode) {
-            ErrorCode::EM01 => new ErrorCodeFormat(ErrorCode::EM01->name, "Duplicate user"),
-            ErrorCode::EM02 => new ErrorCodeFormat(ErrorCode::EM02->name, "Bad request"),
+            ErrorCode::EM01 => new ErrorCodeFormat(ErrorCode::EM01, "Duplicate user"),
+            ErrorCode::EM02 => new ErrorCodeFormat(ErrorCode::EM02, "Bad request"),
             ErrorCode::EM04 => new ErrorCodeFormat(
-                ErrorCode::EM04->name,
+                ErrorCode::EM04,
                 "The amount is greater than the cash flow amount"
             ),
-            ErrorCode::EM05 => new ErrorCodeFormat(ErrorCode::EM05->name, "The max date for loan is crossed "),
-            ErrorCode::EM06 => new ErrorCodeFormat(ErrorCode::EM06->name, "Member have already voted"),
+            ErrorCode::EM05 => new ErrorCodeFormat(ErrorCode::EM05, "The max date for loan is crossed "),
+            ErrorCode::EM06 => new ErrorCodeFormat(ErrorCode::EM06, "Member have already voted"),
             default => throw new TontineException('Unknown error code'),
         };
     }
@@ -88,7 +87,7 @@ class ControllerUtility
         $dividends = 0;
         $deposits->map(function (Deposit $deposit) use ($dividends) {
             if ($deposit->getReasons() &&
-                ($deposit->getReasons() != ReasonDeposit::TONTINARD_DEPOSIT->name)) {
+                ($deposit->getReasons() != ReasonDeposit::TONTINARD_DEPOSIT)) {
                 $dividends += $deposit->getAmount();
             }
         });

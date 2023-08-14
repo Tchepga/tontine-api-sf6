@@ -18,4 +18,17 @@ class TypeEvent
     public const ILLNESS = 'illness';
 
     public const MEETING = 'meeting';
+
+    public static function allTypeEvent(): array
+    {
+        return [
+            self::BIRTHDAY,
+            self::GRIEF,
+            self::WEDDING,
+            self::FUNERAL,
+            self::NEWBORN,
+            self::ILLNESS,
+            self::MEETING,
+        ];
+    }
 }

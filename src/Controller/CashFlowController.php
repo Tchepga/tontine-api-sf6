@@ -9,7 +9,6 @@ use App\Entity\Loan;
 use App\Entity\Member;
 use App\Entity\Tontine;
 use App\Enum\ErrorCode;
-use App\Enum\PeriodTontine;
 use App\Enum\ReasonDeposit;
 use App\Enum\StatusDeposit;
 use App\Exception\TontineException;
@@ -20,20 +19,18 @@ use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 const NO_FOUND_CASHFLOW = " cashflow not found";
 
 #[Route(path: '/api/cashFlow')]
-class CashFlowController extends AbstractController
+class CashFlowController extends BasicController
 {
     /**
      * create a new deposit and add to the cash flow
@@ -46,13 +43,17 @@ class CashFlowController extends AbstractController
      * @throws Exception
      */
     #[Route('/{id}', name: 'app_cashflow_create', methods: ['POST'])]
-    #[IsGranted('ROLE_ACCOUNT_MANAGER')]
     public function create(
         int                    $id,
         Request                $request,
         SerializerInterface    $serializer,
         EntityManagerInterface $em
     ): JsonResponse {
+        if (!$this->isGranted('ROLE_ACCOUNT_MANAGER')) {
+            return $this->json('access denied', Response::HTTP_FORBIDDEN);
+        }
+        $this->denyAccessUnlessGranted('ROLE_ACCOUNT_MANAGER');
+
         $cashFlow = $em->getRepository(CashFlow::class)->find($id);
         if (!$cashFlow) {
             throw new TontineException(NO_FOUND_CASHFLOW);
@@ -65,7 +66,7 @@ class CashFlowController extends AbstractController
 
         $deposit = HttpHelper::getResource($request, $serializer, Deposit::class);
 
-        if (!in_array($deposit->getReasons(), array_column(ReasonDeposit::cases(), 'name'))) {
+        if (!in_array($deposit->getReasons(), ReasonDeposit::allsReasonDeposit())) {
             return $this->json("Invalid deposit reason!", Response::HTTP_BAD_REQUEST);
         }
 
@@ -90,7 +91,7 @@ class CashFlowController extends AbstractController
 
         $deposit->setCreationDate(new DateTime());
         $deposit->setCashFlow($cashFlow);
-        $deposit->setStatus(StatusDeposit::PENDING->name);
+        $deposit->setStatus(StatusDeposit::PENDING);
 
         $cashFlow->setBalance($cashFlow->getBalance() + $deposit->getAmount());
         $cashFlow->setDividendes(ControllerUtility::computeDividends($cashFlow->getDeposits()));
@@ -111,9 +112,11 @@ class CashFlowController extends AbstractController
      * @throws TontineException
      */
     #[Route('/{id}', name: 'app_cashflow_delete', methods: ['DELETE'])]
-    #[IsGranted('ROLE_ACCOUNT_MANAGER')]
+
     public function delete(int $id, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ACCOUNT_MANAGER');
+
         $member = $this->getUser();
         $deposit = $em->getRepository(Deposit::class)->find($id);
         if (!$deposit) {
@@ -129,7 +132,7 @@ class CashFlowController extends AbstractController
             throw new TontineException('The tontinard is not part of the deposit');
         }
 
-        $deposit->setStatus(StatusDeposit::REJECTED->value);
+        $deposit->setStatus(StatusDeposit::REJECTED);
         $em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
@@ -143,9 +146,10 @@ class CashFlowController extends AbstractController
      * @throws TontineException
      */
     #[Route('/{id}/deposits', name: 'app_cashflow_getdeposits', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getDeposits(int $id, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         // only member of the tontine of the cash flow can get the deposits
         $member = $this->getUser();
         if (!$member) {
@@ -182,23 +186,6 @@ class CashFlowController extends AbstractController
         );
     }
 
-    // private function getPeriod(string $interval): string
-    // {
-
-    //            switch ($interval) {
-    //                case PeriodTontine::ANNUALLY->value:
-    //                    $currentYear = date('Y');
-    //                    return date('Y-m-d', strtotime("$currentYear-12-30"));
-    //                    break;
-    //                    case PeriodTontine::MONTHLY->value:
-    //                        $month = date('m');
-    //                        return date('Y-m', strtotime("$currentYear-1-1"));
-    //                        break;
-    //                    case PeriodTontine::QUARTERLY->value:
-    //            }
-
-    //     return "true";
-    // }
 
     /**
      * update status of deposits (Validated or Rejected)
@@ -209,13 +196,14 @@ class CashFlowController extends AbstractController
      * @throws TontineException
      */
     #[Route('/{id}/status', name: 'app_cashflow_status', methods: ['PATCH'])]
-    #[IsGranted('ROLE_ACCOUNT_MANAGER')]
     public function updateStatus(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ACCOUNT_MANAGER');
+
         $member = $this->getUser();
         $status = json_decode($request->getContent(), true)['status'];
 
-        if (!in_array($status, array_column(StatusDeposit::cases(), 'name'))) {
+        if (!in_array($status, array_column(StatusDeposit::allStatusDeposits(), 'name'))) {
             return $this->json('invalid status', Response::HTTP_BAD_REQUEST);
         }
 
@@ -251,7 +239,6 @@ class CashFlowController extends AbstractController
      * @throws Exception
      */
     #[Route('/{id}/loan', name: 'app_create_loan', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function createLoan(
         int                    $id,
         Request                $request,
@@ -259,6 +246,9 @@ class CashFlowController extends AbstractController
         SerializerInterface    $serializer,
         ValidatorInterface     $validator
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $loan = HttpHelper::getResource($request, $serializer, Loan::class);
 
         $this->validateData($em, $id, '');
@@ -288,7 +278,7 @@ class CashFlowController extends AbstractController
             );
         }
 
-        $loan->setStatus(StatusDeposit::PENDING->name);
+        $loan->setStatus(StatusDeposit::PENDING);
         $loan->setCreationDate(new DateTime());
         $loan->setCashFlow($cashFlow);
         $loan->setAuthor($author);
@@ -320,13 +310,14 @@ class CashFlowController extends AbstractController
      * @throws Exception
      */
     #[Route("/{cashFlowId}/loan/{loanId}/vote", name: "app_loan_vote", methods: ['PATCH'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function voteLoan(
         int                    $cashFlowId,
         int                    $loanId,
         EntityManagerInterface $em,
         Request                $request
     ): JsonResponse {
+
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
         $status = json_decode($request->getContent(), true)['status'];
         $this->validateData($em, $cashFlowId, $status);
@@ -386,7 +377,7 @@ class CashFlowController extends AbstractController
             throw new TontineException(NO_FOUND_CASHFLOW);
         }
 
-        if ($status && !in_array($status, array_column(StatusDeposit::cases(), 'value'))) {
+        if ($status && !in_array($status, StatusDeposit::allStatusDeposits())) {
             throw new  TontineException('invalid status', Response::HTTP_BAD_REQUEST);
         }
 
@@ -413,9 +404,10 @@ class CashFlowController extends AbstractController
      * @throws TontineException
      */
     #[Route("/{cashFlowId}/loan", name: "app_cashflow_get_loan", methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getAllLoanOfTontine(int $cashFlowId, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $member = $this->getUser();
         if (!$em->getRepository(Member::class)->findOneBy(['phone' => $member->getUserIdentifier()])) {
             throw new TontineException('Login Member not found');
@@ -451,13 +443,14 @@ class CashFlowController extends AbstractController
      * @throws Exception
      */
     #[Route("/{cashFlowId}/deposits/extract", name: "app_cashflow_get_loan_between", methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED')]
     public function getLoanBetweenDates(
         int                    $cashFlowId,
         EntityManagerInterface $em,
         Request                $request,
         KernelInterface        $kernel
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
         $member = $this->getUser();
         if (!$em->getRepository(Member::class)->findOneBy(['phone' => $member->getUserIdentifier()])) {
             throw new TontineException('Login Member not found');
