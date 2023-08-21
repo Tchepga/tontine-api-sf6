@@ -24,14 +24,14 @@ class CashFlow
 
     #[ORM\Column]
     #[Groups(GroupConst::GROUP_CASHFLOW_READ)]
-    private ?int $balance = null;
+    private ?int $balance = 0;
 
     #[ORM\OneToMany(mappedBy: 'cashFlow', targetEntity: Deposit::class)]
     private Collection $deposits;
 
     #[ORM\Column]
     #[Groups(GroupConst::GROUP_CASHFLOW_READ)]
-    private ?int $dividendes = null;
+    private ?int $dividendes = 0;
 
     #[ORM\OneToMany(mappedBy: 'cashFlow', targetEntity: Loan::class)]
     private Collection $loans;
@@ -91,11 +91,8 @@ class CashFlow
 
     public function removeDeposit(Deposit $deposit): self
     {
-        if ($this->deposits->removeElement($deposit)) {
-            // set the owning side to null (unless already changed)
-            if ($deposit->getCashFlow() === $this) {
-                $deposit->setCashFlow(null);
-            }
+        if ($this->deposits->removeElement($deposit) && $deposit->getCashFlow() === $this) {
+            $deposit->setCashFlow(null);
         }
 
         return $this;
@@ -133,11 +130,8 @@ class CashFlow
 
     public function removeLoan(Loan $loan): self
     {
-        if ($this->loans->removeElement($loan)) {
-            // set the owning side to null (unless already changed)
-            if ($loan->getCashFlow() === $this) {
-                $loan->setCashFlow(null);
-            }
+        if ($this->loans->removeElement($loan) && $loan->getCashFlow() === $this) {
+            $loan->setCashFlow(null);
         }
 
         return $this;

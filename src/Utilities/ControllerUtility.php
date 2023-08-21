@@ -16,6 +16,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class ControllerUtility
 {
+    public const DEFAULT_PASSWORD = 'changeme';
+
     /**
      * sort array of objects by the given property
      * @param array $array

@@ -44,7 +44,7 @@ class Member implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 30, unique: true)]
     #[Assert\NotBlank]
     #[Groups(GroupConst::GROUP_MEMBER_READ)]
-    private ?int $phone = null;
+    private ?float $phone = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(GroupConst::GROUP_MEMBER_READ)]
@@ -132,7 +132,7 @@ class Member implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-    public function getPhone(): ?int
+    public function getPhone(): ?float
     {
         return $this->phone;
     }

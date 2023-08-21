@@ -6,30 +6,48 @@ use App\Conts\GroupConst;
 use App\Entity\Member;
 use App\Entity\Tontine;
 use App\Repository\TontineRepository;
+use App\Utilities\ControllerUtility;
 use App\Utilities\HttpHelper;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Exception\TontineException;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class TontineController extends AbstractController
 {
+    public const TONTINE_NOT_FOUND = "Tontine not found";
+    /**
+     * @throws TontineException
+     */
+    private function validatePresidentData(Member $member, ValidatorInterface $validator): void
+    {
+        if (!in_array('ROLE_PRESIDENT', $member->getRoles())) {
+            throw new TontineException("Member should be president");
+        }
+
+        $errors = $validator->validate($member);
+        if (empty($errors) > 0) {
+            throw new TontineException($errors[0]->getMessage());
+        }
+    }
+
     /**
      * create a new tontine. Requires a member, configuration and a cash flow.
      * @param Request $request
+     * @param bool $fully
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
      * @return JsonResponse
-     * @throws Exception
+     * @throws TontineException
      */
     #[Route('/api/tontine', name: 'app_tontine_create', methods: ['POST'])]
     public function create(
@@ -37,8 +55,12 @@ class TontineController extends AbstractController
         SerializerInterface    $serializer,
         EntityManagerInterface $entityManager,
         ValidatorInterface     $validator,
-    ): JsonResponse {
+        LoggerInterface        $logger,
+        bool                   $fully = false
+    ): JsonResponse
+    {
         $tontine = HttpHelper::getResource($request, $serializer, Tontine::class);
+
         $errors = $validator->validate($tontine);
         if (count($errors) > 0) {
             return $this->json('', Response::HTTP_BAD_REQUEST);
@@ -58,12 +80,40 @@ class TontineController extends AbstractController
         $tontine->setConfiguration($config);
         $tontine->setFund($cashFlow);
         $tontine->setIsActivated(true);
-
         $entityManager->persist($cashFlow);
+
+        //Hack to add president member of the tontine entity
+        $tontinards = $tontine->getTontinards();
+        $nbrTontinards = count($tontinards);
+        if ($nbrTontinards != 1) {
+            throw new TontineException(
+                "Creation of a new tontine requires only one tontinard member");
+        } else {
+            $president = $tontinards->first();
+            $this->validatePresidentData($president, $validator);
+            $president->setPassword($president->getPassword() ?? ControllerUtility::DEFAULT_PASSWORD);
+            $entityManager->persist($president);
+            $tontine->removeTontinard($president);
+        }
+
         $entityManager->persist($tontine);
+
+        if ($tontine->getId() && $president->getId()) {
+            $president->addTontine($tontine);
+        }
         $entityManager->flush();
 
-        return $this->json($tontine, Response::HTTP_CREATED, [], ['groups' => [GroupConst::GROUP_TONTINE_READ]]);
+        return $this->json(
+            null,
+            Response::HTTP_CREATED,
+            [],
+            [
+                'groups' => [
+                    GroupConst::GROUP_TONTINE_READ,
+                    GroupConst::GROUP_CASHFLOW_READ
+                ]
+            ]
+        );
     }
 
     /**
@@ -77,14 +127,17 @@ class TontineController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/tontine/{id}/member', methods: ['PATCH'])]
-    #[IsGranted('ROLE_PRESIDENT')]
     public function addNewTontinard(
         Request                     $request,
         SerializerInterface         $serializer,
         EntityManagerInterface      $entityManager,
         ValidatorInterface          $validator,
         UserPasswordHasherInterface $passwordHasher,
-    ): JsonResponse {
+    ): JsonResponse
+    {
+
+        $this->denyAccessUnlessGranted('ROLE_PRESIDENT');
+
         $tontineId = $request->get('id');
         if (!$tontineId) {
             throw new TontineException("The id of the tontine cannot be empty!");
@@ -109,12 +162,13 @@ class TontineController extends AbstractController
      * @throws TontineException
      */
     private function addNewMember(
-        int                         $tontineId,
-        Member                      $member,
-        EntityManagerInterface      $entityManager,
-        ValidatorInterface          $validator,
+        int                    $tontineId,
+        Member                 $member,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface     $validator,
 
-    ): JsonResponse {
+    ): JsonResponse
+    {
         if (empty($tontineId)) {
             throw new TontineException("The id of the tontine cannot be empty!");
         }
@@ -144,7 +198,7 @@ class TontineController extends AbstractController
         $tontine = $tontineRepository->find($tontineId);
 
         if (!$tontine) {
-            return $this->json('Tontine not found', Response::HTTP_NOT_FOUND, []);
+            return $this->json(self::TONTINE_NOT_FOUND, Response::HTTP_NOT_FOUND, []);
         }
 
         if ($freshMember) {
@@ -193,7 +247,8 @@ class TontineController extends AbstractController
         Member                 $member,
         Tontine                $tontine,
         EntityManagerInterface $em
-    ): void {
+    ): void
+    {
 
         $tontine->addTontinard($member);
         $member->addTontine($tontine);
@@ -233,7 +288,7 @@ class TontineController extends AbstractController
     {
         $tontines = $tontineRepository->findOneBy(['id' => $id, 'isActivated' => true]);
         if (!$tontines) {
-            return $this->json('Tontine not found', Response::HTTP_NOT_FOUND, []);
+            return $this->json(self::TONTINE_NOT_FOUND, Response::HTTP_NOT_FOUND, []);
         }
         return $this->json(
             $tontines,
@@ -258,7 +313,7 @@ class TontineController extends AbstractController
         $tontine = $tontineRepository->findOneBy(['isActivated' => true, 'id' => $id]);
 
         if (!$tontine) {
-            return $this->json('Tontine not found', Response::HTTP_NOT_FOUND, []);
+            return $this->json(self::TONTINE_NOT_FOUND, Response::HTTP_NOT_FOUND, []);
         }
 
         $tontine->setIsActivated(false);
@@ -283,9 +338,9 @@ class TontineController extends AbstractController
      *
      */
     #[Route('/api/tontinePerUser', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function getAllTontinesByUser(EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $member = $this->getUser();
         if (!$member) {
             return $this->json('User not found', Response::HTTP_BAD_REQUEST, []);

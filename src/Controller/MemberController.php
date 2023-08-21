@@ -40,7 +40,7 @@ class MemberController extends AbstractController
         UserPasswordHasherInterface $passwordHasher
     ): JsonResponse {
         $member = HttpHelper::getResource($request, $serializer, Member::class);
-        $noCheck = $request->query->get('noCheck');
+        $noCheck = $request->query->get('noCheck') === 'true';
         //format username
         $member->setUsername(strtolower($member->getFirstname() .
             $member->getLastname()));
