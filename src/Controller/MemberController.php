@@ -61,7 +61,7 @@ class MemberController extends AbstractController
         $isAlreadyMember = $em->getRepository(Member::class)->findOneBy(['phone' => $member->getPhone()]) ||
             $em->getRepository(Member::class)->findOneBy(['username' => $member->getUsername()]);
         if ($isAlreadyMember && !$noCheck) {
-            return $this->json(ControllerUtility::buildError(ErrorCode::EM01), Response::HTTP_BAD_REQUEST);
+            return $this->json(ControllerUtility::buildError(ErrorCode::DUPLICATE_USER), Response::HTTP_BAD_REQUEST);
         } else {
             $em->persist($member);
             $em->flush();
@@ -90,7 +90,7 @@ class MemberController extends AbstractController
     public function getProfile(): JsonResponse
     {
 
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+        $this->denyAccessUnlessGranted('ROLE_USER');
 
         $member = $this->getUser();
         if (!$member) {
@@ -140,7 +140,7 @@ class MemberController extends AbstractController
      * @param EntityManagerInterface $em
      * @return JsonResponse
      */
-    #[Route('/api/login_check', name: 'api_login', methods: ['POST'])]
+    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function login(
         Request                     $request,
         UserPasswordHasherInterface $passwordHasher,
@@ -155,7 +155,7 @@ class MemberController extends AbstractController
 
         if (!$member || !$passwordHasher->isPasswordValid($member, $password)) {
             return $this->json(
-                'missing credentials',
+                ControllerUtility::buildError(ErrorCode::UNAUTHORIZED_USER),
                 Response::HTTP_UNAUTHORIZED
             );
         }
@@ -177,12 +177,12 @@ class MemberController extends AbstractController
         Security $security
     ) {
 
-//        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
-//
-//        // logout the user in on the current firewall
-//        $security->logout(false);
-//
-//        return $this->json('', Response::HTTP_OK);
+        //        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+        //
+        //        // logout the user in on the current firewall
+        //        $security->logout(false);
+        //
+        //        return $this->json('', Response::HTTP_OK);
     }
 
     /**

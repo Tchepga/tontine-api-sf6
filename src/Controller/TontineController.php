@@ -42,10 +42,10 @@ class TontineController extends AbstractController
     /**
      * create a new tontine. Requires a member, configuration and a cash flow.
      * @param Request $request
-     * @param bool $fully
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
+     * @param UserPasswordHasherInterface $passwordHasher
      * @return JsonResponse
      * @throws TontineException
      */
@@ -55,10 +55,8 @@ class TontineController extends AbstractController
         SerializerInterface    $serializer,
         EntityManagerInterface $entityManager,
         ValidatorInterface     $validator,
-        LoggerInterface        $logger,
-        bool                   $fully = false
-    ): JsonResponse
-    {
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse {
         $tontine = HttpHelper::getResource($request, $serializer, Tontine::class);
 
         $errors = $validator->validate($tontine);
@@ -87,11 +85,17 @@ class TontineController extends AbstractController
         $nbrTontinards = count($tontinards);
         if ($nbrTontinards != 1) {
             throw new TontineException(
-                "Creation of a new tontine requires only one tontinard member");
+                "Creation of a new tontine requires only one tontinard member"
+            );
         } else {
             $president = $tontinards->first();
             $this->validatePresidentData($president, $validator);
-            $president->setPassword($president->getPassword() ?? ControllerUtility::DEFAULT_PASSWORD);
+            $president->setPassword(
+                $passwordHasher->hashPassword(
+                    $president,
+                    $president->getPassword() ?? ControllerUtility::DEFAULT_PASSWORD
+                )
+            );
             $entityManager->persist($president);
             $tontine->removeTontinard($president);
         }
@@ -133,8 +137,7 @@ class TontineController extends AbstractController
         EntityManagerInterface      $entityManager,
         ValidatorInterface          $validator,
         UserPasswordHasherInterface $passwordHasher,
-    ): JsonResponse
-    {
+    ): JsonResponse {
 
         $this->denyAccessUnlessGranted('ROLE_PRESIDENT');
 
@@ -167,8 +170,7 @@ class TontineController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface     $validator,
 
-    ): JsonResponse
-    {
+    ): JsonResponse {
         if (empty($tontineId)) {
             throw new TontineException("The id of the tontine cannot be empty!");
         }
@@ -247,8 +249,7 @@ class TontineController extends AbstractController
         Member                 $member,
         Tontine                $tontine,
         EntityManagerInterface $em
-    ): void
-    {
+    ): void {
 
         $tontine->addTontinard($member);
         $member->addTontine($tontine);

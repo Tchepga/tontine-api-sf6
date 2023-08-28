@@ -67,14 +67,21 @@ class ControllerUtility
     public static function buildError(string $errorCode): ErrorCodeFormat
     {
         return match ($errorCode) {
-            ErrorCode::EM01 => new ErrorCodeFormat(ErrorCode::EM01, "Duplicate user"),
-            ErrorCode::EM02 => new ErrorCodeFormat(ErrorCode::EM02, "Bad request"),
-            ErrorCode::EM04 => new ErrorCodeFormat(
-                ErrorCode::EM04,
+            ErrorCode::DUPLICATE_USER => new ErrorCodeFormat(ErrorCode::DUPLICATE_USER, "Duplicate user"),
+            ErrorCode::BAD_REQUEST => new ErrorCodeFormat(ErrorCode::BAD_REQUEST, "Bad request"),
+            ErrorCode::AMOUNT_REJECTED => new ErrorCodeFormat(
+                ErrorCode::AMOUNT_REJECTED,
                 "The amount is greater than the cash flow amount"
             ),
-            ErrorCode::EM05 => new ErrorCodeFormat(ErrorCode::EM05, "The max date for loan is crossed "),
-            ErrorCode::EM06 => new ErrorCodeFormat(ErrorCode::EM06, "Member have already voted"),
+            ErrorCode::DELAY_EXPIRED => new ErrorCodeFormat(
+                ErrorCode::DELAY_EXPIRED,
+                "The max date for loan is crossed"
+            ),
+            ErrorCode::ALREADY_VOTED => new ErrorCodeFormat(ErrorCode::ALREADY_VOTED, "Member have already voted"),
+            ErrorCode::UNAUTHORIZED_USER => new ErrorCodeFormat(
+                ErrorCode::UNAUTHORIZED_USER,
+                "Wrong password or username, please try again"
+            ),
             default => throw new TontineException('Unknown error code'),
         };
     }
@@ -88,8 +95,10 @@ class ControllerUtility
     {
         $dividends = 0;
         $deposits->map(function (Deposit $deposit) use ($dividends) {
-            if ($deposit->getReasons() &&
-                ($deposit->getReasons() != ReasonDeposit::TONTINARD_DEPOSIT)) {
+            if (
+                $deposit->getReasons() &&
+                ($deposit->getReasons() != ReasonDeposit::TONTINARD_DEPOSIT)
+            ) {
                 $dividends += $deposit->getAmount();
             }
         });
