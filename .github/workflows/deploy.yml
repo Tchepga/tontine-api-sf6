@@ -1,0 +1,35 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - first-step
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Hostinger
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          # Install SSH client
+          sudo apt-get install -y ssh-client
+
+          # Setup SSH key
+          echo "$DEPLOY_SSH_KEY" > deploy_key
+          chmod 600 deploy_key
+
+          # SSH and deploy
+          ssh -o StrictHostKeyChecking=no -i deploy_key u256492878@149.100.151.80 <<EOF
+            cd public_html
+            git clone git@github.com:Tchepga/tontine-api-sf6.git tontine-api.
+            cp ../composer.phar .
+            rm docker-compose.yml
+            php composer.phar install
+            php bin/console doctrine:migrations:migrate
+          EOF
