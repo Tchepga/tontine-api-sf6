@@ -66,9 +66,9 @@ jobs:
             -----END OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Transfer files to Hostinger instance
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
+      # - name: Transfer files to Hostinger instance
+      #   run: |
+      #     scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
 
       - name: Connect to Hostinger instance and deploy
         run: |
@@ -79,6 +79,10 @@ jobs:
 
             # delete cache directory
             rm -rf var
+
+            # pull changes
+            git checkout  first-step
+            git reset --hard origin/first-step
 
             # use the current composer.phar (should setup composer each time)
             cp ~/public_html/composer.phar ~/public_html/tontine-api
