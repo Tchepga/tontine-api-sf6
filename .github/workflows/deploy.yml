@@ -49,7 +49,7 @@ jobs:
 
       - name: Connect to Hostinger instance and deploy
         run: |
-          ssh -T -i ~/.ssh/id_rsa -p 65002 u256492878@149.100.151.80 << EOF
+          ssh -o StrictHostKeyChecking=no -T -i ~/.ssh/id_rsa -p 65002 u256492878@149.100.151.80 << EOF
 
             # access to the directory of the project
             cd ~/public_html/tontine-api
