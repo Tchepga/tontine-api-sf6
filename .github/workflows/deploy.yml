@@ -15,7 +15,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
           password: ${{ secrets.PASSWORD }}
-          $
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: $host
