@@ -55,6 +55,7 @@ jobs:
             #fi
 
             # Install dependencies
+            php composer.phar cache:clear
             php composer.phar install
             # composer install --no-dev --optimize-autoloader
 
