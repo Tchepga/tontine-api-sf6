@@ -3,7 +3,7 @@ name: Deploy to Hostinger
 on:
   push:
     branches:
-      - deploy-v1
+      - first-step
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -68,7 +68,7 @@ jobs:
 
       - name: Transfer files to Hostinger instance
         run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -p 65002 -r $PWD ubuntu@149.100.151.80:~/public_html/tontine-api
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD ubuntu@149.100.151.80:~/public_html/tontine-api
 
       - name: Connect to Hostinger instance and deploy
         run: |
