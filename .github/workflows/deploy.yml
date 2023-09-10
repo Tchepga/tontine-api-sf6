@@ -15,32 +15,55 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "
-          b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
-          NhAAAAAwEAAQAAAQEA1Lu+ZmZKbhsf9nSAlBFENyV89Cu/ESYFpHnEqWv7FENlkrA6csTW
-          jEKKdhlc6G9bIpioMCsdpwAIRHsXhyr/bfizRu/rMXThu3CamSpGnGB9d9yX0HMi1G7gkr
-          9vVIDw5sxV5KKnpy67UxiYbW+5iMpKYAOOMgvToisc6uPskd+JoTPyL1fYqQYm5rqg45ny
-          ks8D34mHLJIrIXDj64EHoV6/kKYoo0Wa0ZWScrAFCIpiAtwH5X01+vWrEErtzru/2sXRZ3
-          cvjEwsRxarsdG7T5rFpl+izAz3JJcKLfsgAV1z1KyChb7da4esnNGRhAyQrqBHeqaxROBH
-          07BzSK3X9QAAA9C21FY/ttRWPwAAAAdzc2gtcnNhAAABAQDUu75mZkpuGx/2dICUEUQ3JX
-          z0K78RJgWkecSpa/sUQ2WSsDpyxNaMQop2GVzob1simKgwKx2nAAhEexeHKv9t+LNG7+sx
-          dOG7cJqZKkacYH133JfQcyLUbuCSv29UgPDmzFXkoqenLrtTGJhtb7mIykpgA44yC9OiKx
-          zq4+yR34mhM/IvV9ipBibmuqDjmfKSzwPfiYcskishcOPrgQehXr+QpiijRZrRlZJysAUI
-          imIC3AflfTX69asQSu3Ou7/axdFndy+MTCxHFqux0btPmsWmX6LMDPcklwot+yABXXPUrI
-          KFvt1rh6yc0ZGEDJCuoEd6prFE4EfTsHNIrdf1AAAAAwEAAQAAAQAPdsZUc0Md1eLw628d
-          VFP9HkCDD1sISBdI6YEeP7c0teGAVEcraJuf/oZKJ3XVf6LEVQyE092H8jynnbsMHFgNCn
-          MdyPrz0WdHVNwoHiab33e/as2uXXA+uQCiKkBRiD36yQfFYv2E7aS4WaVa7zAxfWMCr796
-          a9mqhC/J81+TCubsk7037ma5EDI0zfyJoK1KIYlEDsQYuYdPchdeUZlVfITrknRkm5noEZ
-          6cD/WABjJDUN8r67XmraXF3qhONxp5EekUIJSDE6ZiDlMuhyRYzEZhiPHrW5fqspJMtZHz
-          tYvmHwEUJn/kEM7Tn/HkhpjruFhpWimgKj4uWOdOT11RAAAAgFylqTWldxhImsexaXFYdt
-          W0/l8mveNhQc96OdXXObVTClAePA9hosPx/diZi2fndY04RyFLEqvABbaIR3PU0JQ7GqN3
-          /6TTyfIXn+nrAx3jt70qFItboHrocj5va5SYQQnHJCK7GxCvTFirWDr961pEW4GKGKSadk
-          AhlTbb6IdpAAAAgQDqo3uAMwt8t9irVDZ8FnkDjaW1UwybEiHgfx2NEURlU2hYZuTwrU6p
-          RbTg0S8W8zl4m3fay8JJkKgRM7wGADHpQWWY+b9T5MCB+qsx9O57Wpl3/OrBhW3bcr/Kmr
-          eJ1aQxRVwpaxNlZWUVeTn50Wmtaa7IjMnNdeIc488Gnj0mNwAAAIEA6Bm8N8DHYVgx0iQ9
-          I79Oj276RCVP/YqNhbEU2peNQdfbntQ9dXxOSo0xXpJRxeOuEzyp5ldDvu7y3quHDPIJQ5
-          Ev9QqKClDp8qS5byjhYDO8WZoERyTLNgKGzh9qWUXCTwtldKmhlEJIQ+6REAq80YTt1a0G
-          pOtfaXRWDQ6tHTMAAAAYcHRjaGVwZ2FATEFQVE9QLTQ0SDZUNktNAQID" > ~/.ssh/id_rsa
+          echo "-----BEGIN OPENSSH PRIVATE KEY-----
+            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
+            -----END OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       # - name: Transfer files to Hostinger instance
