@@ -15,7 +15,8 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+          echo "
+          b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
           NhAAAAAwEAAQAAAQEA1Lu+ZmZKbhsf9nSAlBFENyV89Cu/ESYFpHnEqWv7FENlkrA6csTW
           jEKKdhlc6G9bIpioMCsdpwAIRHsXhyr/bfizRu/rMXThu3CamSpGnGB9d9yX0HMi1G7gkr
           9vVIDw5sxV5KKnpy67UxiYbW+5iMpKYAOOMgvToisc6uPskd+JoTPyL1fYqQYm5rqg45ny
