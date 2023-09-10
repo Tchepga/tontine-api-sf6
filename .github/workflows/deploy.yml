@@ -27,44 +27,6 @@ jobs:
           echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # - name: Transfer files to Hostinger instance
-      #   run: |
-      #     scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
-
-      - name: Connect to Hostinger instance and deploy
+      - name: Transfer files to Hostinger instance
         run: |
-          ssh -o StrictHostKeyChecking=no -T -i ~/.ssh/id_rsa -p 65002 u256492878@149.100.151.80 << EOF
-
-            # access to the directory of the project
-            cd ~/public_html/tontine-api
-
-            # delete cache directory
-            rm -rf var
-
-            # pull changes
-            git checkout  first-step
-            git reset --hard origin/first-step
-
-            # use the current composer.phar (should setup composer each time)
-            cp ~/public_html/composer.phar ~/public_html/tontine-api
-
-            # Stop the currently running Symfony process (if any)
-            #if [ -f ./var/run/symfony.pid ]; then
-            #    kill \$(cat ./var/run/symfony.pid)
-            #    rm ./var/run/symfony.pid
-            #fi
-
-            # Install dependencies
-            php composer.phar cache:clear
-            php composer.phar install
-            # composer install --no-dev --optimize-autoloader
-
-            # start docker postgresql daemon and migrate the database changes
-            bin/console doctrine:migrations:migrate
-
-            # Clear cache
-            php bin/console cache:clear  --no-warmup
-            php bin/console cache:warmup
-
-            exit
-          EOF
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
