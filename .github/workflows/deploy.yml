@@ -1,24 +1,66 @@
-name: remote ssh command
-on: [push]
+name: PHP composer
+
+on:
+  push:
+    branches:
+      - first-step
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: executing remote ssh commands using password
-        env:
-          host: ${{ secrets.HOST  }}
-          username: ${{ secrets.USERNAME }}
-          # port: ${{ secrets.PORT }}
-          password: ${{ secrets.PASSWORD }}
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: $host
-          username: $username
-          password: $password
-          port: 65002
-          script: whoami
+      # - uses: actions/checkout@v3
+
+      # - name: Validate composer.json and composer.lock
+      #   run: composer validate --strict
+
+      # - name: Transfer files to Hostinger instance
+      #   run: |
+      #     scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
+      - name: Checkout
+        uses: actions/checkout@e2f20e631ae6d7dd3b768f56a5d2af784dd54791 #
+
+      - name: Checkout
+        uses: actions/checkout@e2f20e631ae6d7dd3b768f56a5d2af784dd54791 #
+
+      - name: Connect to Hostinger instance and deploy
+        run: |
+          chmod 600 id_rsa
+          ssh -o StrictHostKeyChecking=no -i id_rsa -p 65002 u256492878@149.100.151.80 << EOF
+
+            # access to the directory of the project
+            cd ~/public_html/tontine-api
+
+            # delete cache directory
+            rm -rf var
+
+            # pull changes
+            git checkout  first-step
+            git reset --hard origin/first-step
+
+            # use the current composer.phar (should setup composer each time)
+            cp ~/public_html/composer.phar ~/public_html/tontine-api
+
+            # Stop the currently running Symfony process (if any)
+            #if [ -f ./var/run/symfony.pid ]; then
+            #    kill \$(cat ./var/run/symfony.pid)
+            #    rm ./var/run/symfony.pid
+            #fi
+
+            # Install dependencies
+            php composer.phar cache:clear
+            php composer.phar install
+            # composer install --no-dev --optimize-autoloader
+
+            # start docker postgresql daemon and migrate the database changes
+            bin/console doctrine:migrations:migrate
+
+            # Clear cache
+            php bin/console cache:clear  --no-warmup
+            php bin/console cache:warmup
+            exit
+          EOF
