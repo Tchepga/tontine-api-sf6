@@ -13,7 +13,7 @@ jobs:
         env:
           host: ${{ secrets.HOST  }}
           username: ${{ secrets.USERNAME }}
-          port: ${{ secrets.PORT }}
+          port: 65002
           password: ${{ secrets.PASSWORD }}
         uses: appleboy/ssh-action@v1.0.0
         with:
