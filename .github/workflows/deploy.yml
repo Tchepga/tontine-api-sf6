@@ -15,8 +15,7 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "-----BEGIN OPENSSH PRIVATE KEY-----
-            b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAACFwAAAAdzc2gtcn
+          echo "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAACFwAAAAdzc2gtcn
             NhAAAAAwEAAQAAAgEAutfmSGPoRXHFhzK+l1baSWWowsdihBhY5mmvSQW+DL0b79w/Ocfu
             LIz0vc23aH3YN/I6YZ4+IC6ZUCIoGshJQX/L/dZFG/J2pVEYSyOo2H0ucxlS/Q3eQx5DGy
             8eydZUTT4Yoxm29uoiXktj3sdyGv75zY/r37slBXO9q7y5ZbjBFNxaJwtW+mdcxiQzywew
@@ -62,8 +61,7 @@ jobs:
             UE4m+NrcwasSyyafRdHgYq6l+8YDvlkMDnaqSsmh5Ka55HVTlAtuXrdHihfsdNkpgpR5jd
             xg9YdotZwCFCGioJ4mR9EGGA1oG4wjGXOTG6UJgp6W193ZrW9HFCYoRD3c9oCldSQ2cbjA
             xLvoFWq4xXguqsz67g1ePQwLOee7qftNKHaaxb0+J5w3UvzQR45vwkb5LqqQ8Um4RsUCuq
-            MEQccl/00sLTAAAAF3RjaGVwZ2FwYXRyaWNrQHlhaG9vLmZyAQID
-            -----END OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa
+            MEQccl/00sLTAAAAF3RjaGVwZ2FwYXRyaWNrQHlhaG9vLmZyAQID" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       # - name: Transfer files to Hostinger instance
