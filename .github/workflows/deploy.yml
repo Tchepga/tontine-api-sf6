@@ -1,32 +1,19 @@
-name: PHP composer
-
-on:
-  push:
-    branches:
-      - first-step
+name: remote ssh command
+on: [push]
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  build:
+    name: Build
     runs-on: ubuntu-latest
-
     steps:
-      # - uses: actions/checkout@v3
-
-      # - name: Validate composer.json and composer.lock
-      #   run: composer validate --strict
-
-      - name: Set up SSH key
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-
-        run: |
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Transfer files to Hostinger instance
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -P 65002 -r $PWD u256492878@149.100.151.80:~/public_html/tontine-api
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: whoami
