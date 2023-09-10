@@ -68,11 +68,11 @@ jobs:
 
       - name: Transfer files to Hostinger instance
         run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r $PWD ubuntu@149.100.151.80:~/public_html/tontine-api
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa  -p 65002 -r $PWD ubuntu@149.100.151.80:~/public_html/tontine-api
 
       - name: Connect to Hostinger instance and deploy
         run: |
-          ssh -i ~/.ssh/id_rsa  ubuntu@149.100.151.80 << EOF
+          ssh -i ~/.ssh/id_rsa -p 65002  ubuntu@149.100.151.80 << EOF
 
             # access to the directory of the project
             cd ~/public_html/tontine-api
