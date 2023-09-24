@@ -24,9 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@e2f20e631ae6d7dd3b768f56a5d2af784dd54791 #
 
-      - name: Checkout
-        uses: actions/checkout@e2f20e631ae6d7dd3b768f56a5d2af784dd54791 #
-
       - name: Connect to Hostinger instance and deploy
         run: |
           chmod 600 id_rsa
